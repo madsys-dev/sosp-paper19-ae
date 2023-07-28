@@ -1,0 +1,55 @@
+diff --git a/test/Makefile b/test/Makefile
+index 68fa4f1..93cb2c0 100644
+--- a/test/Makefile
++++ b/test/Makefile
+@@ -16,11 +16,13 @@ RALLOC_FLAGS = $(FLAGS) -DRALLOC -L.
+ MAKALU_FLAGS = $(FLAGS) -I../ext/makalu_alloc/include -DMAKALU -L../ext/makalu_alloc/lib -lmakalu 
+ PMDK_FLAGS = $(FLAGS) -DPMDK -lpmemobj 
+ 
++
+ R_CXXFLAGS = $(RALLOC_FLAGS) -ljemalloc -L. -lralloc 
+ MAK_CXXFLAGS = $(MAKALU_FLAGS) -ljemalloc 
+ JE_CXXFLAGS = $(FLAGS) -ljemalloc
+ LR_CXXFLAGS = $(FLAGS) -L../ext/lrmalloc -l:lrmalloc.a -ldl# for built-in malloc
+ PMDK_CXXFLAGS = $(PMDK_FLAGS) -ljemalloc
++MI_CXXFLAGS = ${FLAGS} -DMIMALLOC -lmimalloc -L/usr/local/lib64/libmimalloc.so.2 -Wl,-rpath=/usr/local/lib64/
+ 
+ # Ralloc by default
+ CXXFLAGS = $(R_CXXFLAGS)
+@@ -45,6 +47,10 @@ ifeq ($(ALLOC),pmdk)
+ 	CXXFLAGS = $(PMDK_CXXFLAGS)
+ endif
+ 
++ifeq ($(ALLOC),mi)
++	CXXFLAGS = $(MI_CXXFLAGS)
++endif
++
+ LIBS = -pthread -lstdc++ -latomic 
+ 
+ all: benchmark_pm
+diff --git a/test/benchmark/AllocatorMacro.hpp b/test/benchmark/AllocatorMacro.hpp
+index 6a51387..2737c07 100644
+--- a/test/benchmark/AllocatorMacro.hpp
++++ b/test/benchmark/AllocatorMacro.hpp
+@@ -242,8 +242,20 @@ volatile static int init_count = 0;
+   }
+   inline void pm_set_root(void* ptr, unsigned int i) { ((PMDK_roots*)pmemobj_direct(root))->roots[i] = ptr; }
+ 
+-#else // PMDK ends
++#elif defined(MIMALLOC) // PMDK ends
+ 
++#include <mimalloc-2.0/mimalloc.h>
++
++  extern void* roots[1024];
++  inline void* pm_malloc(size_t s) {return mi_malloc(s);}
++  inline void pm_free(void* p) {  mi_free(p); }
++  inline void* pm_realloc(void* ptr, size_t new_size) { return nullptr; }
++  inline void* pm_calloc(size_t num, size_t size) { return nullptr; }
++  inline int pm_init() { return 0; }
++  inline void pm_close() { return; }
++  inline void pm_recover() { assert(0 && "not implemented"); }
++
++#else
+   extern void* roots[1024];
+   inline void* pm_malloc(size_t s) { return malloc(s); }
+   inline void pm_free(void* p) { free(p);}
