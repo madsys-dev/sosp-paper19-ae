@@ -108,6 +108,17 @@ git apply [CXL-SHM home path]/ralloc.patch
 ```
 
 Phoenix is a shared-memory implementation of Google's MapReduce model for data-intensive processing tasks.
+```shell
+git clone https://github.com/kozyraki/phoenix.git
+cd phoenix/sample_apps
+cd kmeans; make
+```
+
+Lightning is a high-performance in-memory object store without requiring  IPC overheads on kv operations.
+```
+git clone https://github.com/danyangz/lightning.git
+docker build -t lightning .
+```
 
 
 #### Reproduce the data in the Evaluations
@@ -204,10 +215,10 @@ sh script/run-kmeans.sh
 sh script/run-wc.sh
 ```
 
-* To reproduce the comparsions (Phoenix), please use the benchmark in Phoenix Project [^4]. Follow the README to compile the project, and use the apps named ```wordcount``` and ```kmeans``` in the directory ```sample_apps```. Note that ```wordcount``` requires 1GB random generated txt as the input (the same as our implementation of work count).
+* To reproduce the comparsions (Phoenix), please use the benchmark in Phoenix Project [^4]. Follow the README to compile the project, and use the apps named ```wordcount``` and ```kmeans``` in the directory ```sample_apps```. Note that ```wordcount``` requires 1GB random generated txt as the input (the same as our implementation of work count). Copy below scripts to the Phoenix directory and run them can reproduce the results. 
 ```shell
-sh script/run-pr.sh
-sh script/run-wc.sh
+sh script/run-km-phoenix.sh
+sh script/run-wc-phoenix.sh
 ```
 
 * CXL environment
@@ -225,6 +236,7 @@ sh script/run-wc.sh
 sh script/run_kv.sh
 sh script/run_kv_baseline.sh
 ```
+  * To reproduce the data of Lightning, please use docker to construct the environment for compiling and running Lightning (see `README` of Lightning). After that, use `throughput.sh` in `script` dir.
 
 * Figure 8b: To reproduce the data of CXL-KV with different Write/Read Ratio in Figure 8b, use `run_kv_ratio.sh`
 ```shell
