@@ -261,7 +261,7 @@ sh script/run-tatp-tbb.sh
 ![Alt text](image-3.png)
 ![Alt text](image-4.png) -->
 
-* Figure 8e: To reproduce the throughput of Intersect and 2 Hops Query of CXL-Graph in Figure 8e, use `run_graph.sh`. Before that, please setup the `path` as the graph dataset file (LiveJournal in our evaluations).
+* Figure 8e: To reproduce the throughput of Intersect and 2 Hops Query of CXL-Graph in Figure 8e, use `run_graph.sh`. Before that, please setup the `path` as the graph dataset file (LiveJournal in our evaluations). **Note that delete the header lines that contain metadata of the graph dataset.**
 ```shell
 sh script/run-graph.sh
 ```
