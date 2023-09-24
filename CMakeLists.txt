@@ -20,10 +20,10 @@ if(USE_CXL)
 endif()
 
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -pthread -lnuma -lstdc++ -fpermissive -fno-omit-frame-pointer -fPIC")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -pthread -lstdc++ -fpermissive -fno-omit-frame-pointer -fPIC")
 
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -g")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -pthread -lnuma -lstdc++ -fpermissive -fno-omit-frame-pointer -fPIC")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g -pthread -lstdc++ -fpermissive -fno-omit-frame-pointer -fPIC")
 
 set (CMAKE_CXX_STANDARD
   "20"
@@ -41,8 +41,6 @@ set (CMAKE_BUILD_TYPE
 if (NOT CMAKE_BUILD_TYPE)
   set (CMAKE_BUILD_TYPE "Release")
 endif ()
-
-set(CMAKE_EXE_LINKER_FLAGS "-latomic")
 
 option(FAULT_INJECTION "fault injection option" OFF)
 if(FAULT_INJECTION)
@@ -65,6 +63,7 @@ add_library (cxlmalloc STATIC
   src/recovery.cpp
 )
 target_include_directories(cxlmalloc PUBLIC ${INCLUDE_DIRECTORIES})
+target_link_libraries(cxlmalloc PUBLIC atomic numa)
 
 # if(CXL_BUILD_TESTS)
 #   list(APPEND cxl_build_targets "tests")
