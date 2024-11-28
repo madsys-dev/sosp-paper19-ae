@@ -8,6 +8,7 @@
 #include <functional>
 #include <iostream>
 #include <atomic>
+#include <chrono>
 
 
 # define ZU(x)  x##ULL
@@ -31,9 +32,10 @@
 # define HASH_TABLE_SIZE             (ZU(1)<<20)
 # define SEGMENTS_AREA_START         (ZU(1)<<27)
 
-# define CXL_BIN_SIZE   (66U)
-
-# define MESSAGE_BUFFER_SIZE (16)
+# define CXL_BIN_SIZE   (128U)
+// # define CXL_BIN_SIZE (128U)
+//# define CXL_BIN_SIZE   (1024U)
+# define MESSAGE_BUFFER_SIZE (1024)
 
 # define MAX_THREAD (1024)
 # define MAX_SEGMENT_NUM (4096)
@@ -53,6 +55,9 @@ typedef struct CXLObj_s {
     uint64_t next;
     std::atomic<uint64_t> ref_info;          // 8 bytes for lcid(2), ref_cnt(2), lenum(4) 
     uint64_t embedded_ref_cnt;
+    uint64_t reader_count;
+    uint64_t writer_count;
+    std::string str_content;
 } CXLObj;
 
 
@@ -68,8 +73,10 @@ public:
     cxl_shm*       shm;
     uint64_t       tbr;
     uint64_t       data;
+    std::string    str_content;
 public:
     CXLRef_s(cxl_shm* _shm, uint64_t _tbr, uint64_t _data);
+    CXLRef_s(cxl_shm* _shm, uint64_t _tbr, uint64_t _data, std::string str_content);
     CXLRef_s(const CXLRef_s& cxl_ref);
     CXLRef_s(const CXLRef_s&& cxl_ref);
     CXLRef_s& operator=(const CXLRef_s& cxl_ref);
@@ -169,4 +176,7 @@ enum segment_state
     POTENTIAL_LEAKING = 2,
 };
 
+inline long get_duration(std::chrono::time_point<std::chrono::system_clock> t_end, std::chrono::time_point<std::chrono::system_clock> t_start) {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_start).count();
+}
 #endif

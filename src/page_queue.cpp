@@ -23,12 +23,14 @@ void cxl_page_queue_s::cxl_page_queue_push(cxl_page_t* page, void* start)
         POTENTIAL_FAULT
         first_page->prev = page_offset;
         POTENTIAL_FAULT
+         //std::cout << "cxl_page_queue_push page->first赋值first："<< page_offset << std::endl;
         first = page_offset;
         POTENTIAL_FAULT
     }
     else
     {
         POTENTIAL_FAULT
+         //std::cout << "cxl_page_queue_push page->first赋值sec："<< page_offset << std::endl;
         first = page_offset;
         POTENTIAL_FAULT
         last = page_offset;
@@ -66,6 +68,7 @@ void cxl_page_queue_s::cxl_page_queue_remove(cxl_page_t* page, void* start)
     if(page_offset == first) 
     {
         POTENTIAL_FAULT
+         //std::cout << "cxl_page_queue_remove page->first赋值thr："<< page->next << std::endl;
         first = page->next;
         POTENTIAL_FAULT
     }

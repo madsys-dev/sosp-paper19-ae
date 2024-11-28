@@ -11,7 +11,7 @@ project (cxlmalloc
 # WARNING_FLAGS:=-ftrapv -Wreturn-type -W -Wall \
 # -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter
 
-option(USE_CXL "option for using cxl devic" ON)
+option(USE_CXL "option for using cxl devic" OFF)
 # if you would like to disbale, use '-D USE_CXL=OFF'
 
 if(USE_CXL)
@@ -39,8 +39,10 @@ set (CMAKE_BUILD_TYPE
   FORCE)
 
 if (NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE "Release")
+  set (CMAKE_BUILD_TYPE "Debug")
 endif ()
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CMAKE_EXE_LINKER_FLAGS "-latomic")
 
@@ -76,7 +78,7 @@ if (CXL_BUILD_TESTS)
   foreach(TEST_NAME api stress)
     add_executable(cxlmalloc-test-${TEST_NAME} test/test_${TEST_NAME}.cpp)
     target_include_directories(cxlmalloc-test-${TEST_NAME} PRIVATE ${INCLUDE_DIRECTORIES})
-    target_link_libraries(cxlmalloc-test-${TEST_NAME} PRIVATE cxlmalloc)
+    target_link_libraries(cxlmalloc-test-${TEST_NAME} PRIVATE cxlmalloc atomic)
 
     add_test(NAME test-${TEST_NAME} COMMAND cxlmalloc-test-${TEST_NAME})
   endforeach()
@@ -84,39 +86,39 @@ endif()
 
 foreach(TEST_NAME threadtest sh6bench rpc_server rpc_client kv kv_zipf tatp smallbank graph)
   add_executable(cxlmalloc-benchmark-${TEST_NAME} test/benchmark/${TEST_NAME}.cpp)
-  target_link_libraries(cxlmalloc-benchmark-${TEST_NAME} PUBLIC cxlmalloc)
+  target_link_libraries(cxlmalloc-benchmark-${TEST_NAME} PUBLIC cxlmalloc atomic numa)
   target_include_directories(cxlmalloc-benchmark-${TEST_NAME} PUBLIC ${INCLUDE_DIRECTORIES})
 endforeach()
 
 
 foreach(TEST_NAME shm_init recovery_test recovery_check recovery_test_time)
   add_executable(${TEST_NAME} test/${TEST_NAME}.cpp)
-  target_link_libraries(${TEST_NAME} PUBLIC cxlmalloc)
+  target_link_libraries(${TEST_NAME} PUBLIC cxlmalloc atomic)
   target_include_directories(${TEST_NAME} PUBLIC ${INCLUDE_DIRECTORIES})
 endforeach()
 
 add_executable(cxlmalloc-benchmark-wc test/benchmark/mapreduce/wordcount.cpp)
 target_include_directories(cxlmalloc-benchmark-wc PRIVATE ${INCLUDE_DIRECTORIES})
-target_link_libraries(cxlmalloc-benchmark-wc PRIVATE cxlmalloc)
+target_link_libraries(cxlmalloc-benchmark-wc PRIVATE cxlmalloc atomic numa)
 
 add_executable(cxlmalloc-benchmark-pr test/benchmark/mapreduce/pagerank.cpp)
 target_include_directories(cxlmalloc-benchmark-pr PRIVATE ${INCLUDE_DIRECTORIES})
-target_link_libraries(cxlmalloc-benchmark-pr PRIVATE cxlmalloc)
+target_link_libraries(cxlmalloc-benchmark-pr PRIVATE cxlmalloc atomic numa)
 
 add_executable(cxlmalloc-benchmark-km test/benchmark/mapreduce/kmeans.cpp)
 target_include_directories(cxlmalloc-benchmark-km PRIVATE ${INCLUDE_DIRECTORIES})
-target_link_libraries(cxlmalloc-benchmark-km PRIVATE cxlmalloc)
+target_link_libraries(cxlmalloc-benchmark-km PRIVATE cxlmalloc atomic numa)
 
 find_package(TBB REQUIRED)
 
 add_executable(cxlmalloc-benchmark-kv_baseline test/benchmark/kv_baseline.cpp)
-target_link_libraries(cxlmalloc-benchmark-kv_baseline PUBLIC cxlmalloc PUBLIC tbb)
+target_link_libraries(cxlmalloc-benchmark-kv_baseline PUBLIC cxlmalloc PUBLIC tbb atomic numa)
 target_include_directories(cxlmalloc-benchmark-kv_baseline PUBLIC ${INCLUDE_DIRECTORIES})
 
 add_executable(cxlmalloc-benchmark-smallbank_tbb test/benchmark/smallbank_tbb.cpp)
-target_link_libraries(cxlmalloc-benchmark-smallbank_tbb PUBLIC cxlmalloc PUBLIC tbb)
+target_link_libraries(cxlmalloc-benchmark-smallbank_tbb PUBLIC cxlmalloc PUBLIC tbb atomic numa)
 target_include_directories(cxlmalloc-benchmark-smallbank_tbb PUBLIC ${INCLUDE_DIRECTORIES})
 
 add_executable(cxlmalloc-benchmark-tatp_tbb test/benchmark/tatp_tbb.cpp)
-target_link_libraries(cxlmalloc-benchmark-tatp_tbb PUBLIC cxlmalloc PUBLIC tbb)
+target_link_libraries(cxlmalloc-benchmark-tatp_tbb PUBLIC cxlmalloc PUBLIC tbb atomic numa)
 target_include_directories(cxlmalloc-benchmark-tatp_tbb PUBLIC ${INCLUDE_DIRECTORIES})

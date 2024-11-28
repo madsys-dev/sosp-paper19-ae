@@ -8,6 +8,14 @@ CXLRef_s::CXLRef_s(cxl_shm* _shm, uint64_t _tbr, uint64_t _data)
     data = _data;
 }
 
+CXLRef_s::CXLRef_s(cxl_shm* _shm, uint64_t _tbr, uint64_t _data, std::string str_content)
+{
+    shm = _shm;
+    tbr = _tbr;
+    data = _data;
+    str_content = str_content; 
+}
+
 CXLRef_s::CXLRef_s(const CXLRef_s& cxl_ref)
 {
     shm = cxl_ref.shm;

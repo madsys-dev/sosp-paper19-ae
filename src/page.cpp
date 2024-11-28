@@ -20,11 +20,13 @@ cxl_block* cxl_shm::cxl_malloc_generic(cxl_page_queue_t* pq, cxl_page_t* &page)
     POTENTIAL_FAULT
     if(page == NULL) 
     {
+        //std::cout << "cxl_malloc_generic page == NULL" << std::endl;
         return NULL;
     }
     else
     {
         POTENTIAL_FAULT
+        //std::cout << "cxl_malloc_generic page != NULL" << std::endl;
         return cxl_page_malloc(pq, page);
     }
 }
@@ -107,17 +109,20 @@ void cxl_shm::cxl_thread_free_collect(cxl_page_t* page)
 cxl_page_t* cxl_shm::cxl_page_queue_find_free_ex(cxl_page_queue_t* pq)
 {
     POTENTIAL_FAULT
+    //std::cout << "cxl_page_queue_find_free_ex, pq->first :" << pq->first << std::endl;
     cxl_page_t* page = pq->first == 0 ? NULL : (cxl_page_t*)get_data_at_addr(start, pq->first);
     POTENTIAL_FAULT
     while (page != NULL)
     {
         POTENTIAL_FAULT
         cxl_page_t* next = get_page_by_offset(page->next);
+        //std::cout << "cxl_page_queue_find_free_ex, page != NULL  next:" << next << std::endl;
         POTENTIAL_FAULT
         cxl_page_free_collect(page);
         POTENTIAL_FAULT
         if(page->free != 0)
         {
+            //std::cout << "cxl_page_queue_find_free_ex, page->free != 0 :" << page->free << std::endl;
             break;
         }
         POTENTIAL_FAULT
@@ -127,7 +132,10 @@ cxl_page_t* cxl_shm::cxl_page_queue_find_free_ex(cxl_page_queue_t* pq)
     if(page == NULL)
     {
         POTENTIAL_FAULT
+        
         page = cxl_page_fresh(pq);
+        
+        //std::cout << "cxl_page_queue_find_free_ex, page == NULL  cxl_page_fresh(pq):" << page <<  " , pq: "<< pq << std::endl;
         POTENTIAL_FAULT
     }
 
@@ -145,12 +153,20 @@ cxl_page_t* cxl_shm::cxl_page_fresh(cxl_page_queue_t* pq)
     POTENTIAL_FAULT
     if(pq == &tls->pages[0] || pq == &tls->pages[1]) special = true;
     POTENTIAL_FAULT
+
     cxl_page_t* page = cxl_segment_page_alloc(pq->block_size);
+    if (page == NULL) {
+        //std::cout<<"cxl_page_fresh  page == NULL" <<std::endl;
+        return NULL;
+    }
     POTENTIAL_FAULT
+    //std::cout<<"cxl_page_fresh  block_size:" << pq->block_size <<std::endl;
     cxl_page_init(special, page, pq->block_size);
+    //std::cout<<"cxl_page_fresh  block_size:" << pq->block_size <<std::endl;
     POTENTIAL_FAULT
     if(pq == &tls->pages[1])
         page->is_msg_queue_page = true;
+    
     POTENTIAL_FAULT
     FLUSH(page);
     FENCE;
@@ -163,6 +179,7 @@ cxl_page_t* cxl_shm::cxl_page_fresh(cxl_page_queue_t* pq)
 // Initialize a fresh page
 void cxl_shm::cxl_page_init(bool special, cxl_page_t* page, uint64_t block_size)
 {
+    //std::cout<<"cxl_page_init block_size:" << block_size << ", page: " << page  <<std::endl;
     POTENTIAL_FAULT
     page->local_free = 0;
     POTENTIAL_FAULT
@@ -177,32 +194,41 @@ void cxl_shm::cxl_page_init(bool special, cxl_page_t* page, uint64_t block_size)
     page->is_msg_queue_page = false;
     POTENTIAL_FAULT
 
-
     void* page_area = cxl_page_start(cxl_ptr_segment(page), page);
     POTENTIAL_FAULT
     cxl_block* start_block = cxl_page_block_at(page_area, block_size, 0);
     POTENTIAL_FAULT
     cxl_block* last_block = cxl_page_block_at(page_area, block_size, PAGE_SIZE / block_size - 1);
+    
     POTENTIAL_FAULT
     cxl_block* block = start_block;
     POTENTIAL_FAULT
     while (block < last_block)
     {
         POTENTIAL_FAULT
+        
+        //std::cout<<"cxl_page_init loop start block_size:" << block_size << ",PAGE_SIZE" << PAGE_SIZE <<std::endl;
         if(special) memset(block, 0, sizeof(block_size));
         else memset(block, 0, sizeof(CXLObj));
         POTENTIAL_FAULT
+        
+        //std::cout<<"cxl_page_init block_size7," << block_size << ",PAGE_SIZE" << PAGE_SIZE <<std::endl;
         cxl_block* next = (cxl_block*)((char*)block + block_size);
+        //std::cout<<"cxl_page_init block_size8," << block_size << ",PAGE_SIZE" << PAGE_SIZE <<std::endl;
         POTENTIAL_FAULT
         block->next = get_offset_for_data(start, next);
+        //std::cout<<"cxl_page_init block_size9," << block_size << ",PAGE_SIZE" << PAGE_SIZE << " ,block->next: " << block->next << " ,block:" << block << " ,next: " << next <<std::endl;
         POTENTIAL_FAULT
         block = next;
+        // std::cout<<"cxl_page_init loop end," << ",block: " << block << ", last_block: " << last_block << PAGE_SIZE <<std::endl;
         POTENTIAL_FAULT
     }
     POTENTIAL_FAULT
     last_block->next = page->free;
+    // std::cout<<"cxl_page_init block_size11," << block_size << ",PAGE_SIZE" << PAGE_SIZE <<std::endl;
     POTENTIAL_FAULT
     page->free = get_offset_for_data(start, start_block);
+    // std::cout<<"cxl_page_init block_size12," << block_size << ",PAGE_SIZE" << PAGE_SIZE <<std::endl;
     POTENTIAL_FAULT
 }
 

@@ -1,0 +1,68 @@
+cc@cxl-2:~/workspace/cxl-shm/build$ ./cxlmalloc-test-api 1 128 256
+1
+1
+test: thread init...
+ok.
+test: malloc and free...
+cxl_segment_alloc  COUNT:1  ,data: 0x7fc75ef41000  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 0  ,&saf_no_use: 0x7ffe63dd8434 ,sas_no_use:0  ,thread_id: 2 ,SEGMENTS_AREA_START + count*SEGMENT_SIZE: 201326592, SEGMENTS_AREA_START:134217728, SEGMENT_SIZE:67108864 , size: 268435456
+cxl_segment_alloc  after loop data:0x7fc75ef41000  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 20x7fc75ef41000
+ok.
+test: data transfer...
+cxl_segment_alloc  COUNT:1  ,data: 0x7fc75ef41000  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 0  ,&saf_no_use: 0x7ffe63dd8434 ,sas_no_use:0  ,thread_id: 2 ,SEGMENTS_AREA_START + count*SEGMENT_SIZE: 201326592, SEGMENTS_AREA_START:134217728, SEGMENT_SIZE:67108864 , size: 268435456
+cxl_segment_alloc  after loop data:0x7fc75ef41000  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 20x7fc75ef41000
+
+ start t1:
+ 
+ cxl_unwrap_mend before loop q->start: 0 ,q->end： 0 ,offset： 134414336 ,q->buffer[q->start]:0 ,q->buffer[q->end]: 0
+
+ start t2:
+ 
+ cxl_unwrap_mend before loop q->start: 0 ,q->end： 0 ,offset： 134414528 ,q->buffer[q->start]:0 ,q->buffer[q->end]: 0
+
+ start send t1:
+sent_to before link q->start: 0,q->end: 0 ,offset: 134348800 ,q->buffer[q->end]: 0
+link_reference  start: _ref:0 ,_refed : 134348800
+link_reference  _refed: 134348800
+link_reference  _ref: 0
+ 
+ cxl_unwrap_mend after loop q->start: 0 ,q->end： 1 ,offset： 134414336 ,q->buffer[q->start]:134348800 ,q->buffer[q->end]: 0
+cxl_segment_alloc  COUNT:1  ,data: 0x7fc74e740000  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 2  ,&saf_no_use: 0x7fc75ef3fa14 ,sas_no_use:0  ,thread_id: 3 ,SEGMENTS_AREA_START + count*SEGMENT_SIZE: 201326592, SEGMENTS_AREA_START:134217728, SEGMENT_SIZE:67108864 , size: 268435456
+cxl_segment_alloc  COUNT:2  ,data: 0x7fc74e740020  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 0  ,&saf_no_use: 0x7fc75ef3fa14 ,sas_no_use:0  ,thread_id: 3 ,SEGMENTS_AREA_START + count*SEGMENT_SIZE: 268435456, SEGMENTS_AREA_START:134217728, SEGMENT_SIZE:67108864 , size: 268435456
+cxl_segment_alloc  after loop data:0x7fc74e740020  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 30x7fc74e740020
+ 
+ cxl_unwrap_mend before link_reference:  q->buffer[q->start]: 134348800
+ 
+ cxl_unwrap_mend before link_reference:  tbr 0x7fc75a750000
+ 
+ cxl_unwrap_mend before link_reference:  tbr->pptr: 0
+link_reference  start: _ref:0 ,_refed : 134348800
+link_reference  _refed: 134348800
+link_reference  _ref: 0
+cxl_unwrap_mend return CXLRef(this, get_offset_for_data(start, (void*) tbr), tbr->pptr + sizeof(CXLObj));  
+
+ start send t2:
+sent_to before link q->start: 0,q->end: 0 ,offset: 134348800 ,q->buffer[q->end]: 0
+link_reference  start: _ref:0 ,_refed : 134348800
+link_reference  _refed: 134348800
+link_reference  _ref: 0
+ 
+ cxl_unwrap_mend after loop q->start: 0 ,q->end： 1 ,offset： 134414528 ,q->buffer[q->start]:134348800 ,q->buffer[q->end]: 0
+cxl_segment_alloc  COUNT:1  ,data: 0x7fc73df3f000  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 2  ,&saf_no_use: 0x7fc74e73ea14 ,sas_no_use:0  ,thread_id: 4 ,SEGMENTS_AREA_START + count*SEGMENT_SIZE: 201326592, SEGMENTS_AREA_START:134217728, SEGMENT_SIZE:67108864 , size: 268435456
+cxl_segment_alloc  COUNT:2  ,data: 0x7fc73df3f020  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 0  ,&saf_no_use: 0x7fc74e73ea14 ,sas_no_use:0  ,thread_id: 4 ,SEGMENTS_AREA_START + count*SEGMENT_SIZE: 268435456, SEGMENTS_AREA_START:134217728, SEGMENT_SIZE:67108864 , size: 268435456
+cxl_segment_alloc  after loop data:0x7fc73df3f020  ,((std::atomic<uint32_t> *) data)->load(std::memory_order_relaxed): 40x7fc73df3f020
+ 
+ cxl_unwrap_mend before link_reference:  q->buffer[q->start]: 134348800
+ 
+ cxl_unwrap_mend before link_reference:  tbr 0x7fc749f4f000
+ 
+ cxl_unwrap_mend before link_reference:  tbr->pptr: 0
+link_reference  start: _ref:0 ,_refed : 134348800
+link_reference  _refed: 134348800
+link_reference  _ref: 0
+cxl_unwrap_mend return CXLRef(this, get_offset_for_data(start, (void*) tbr), tbr->pptr + sizeof(CXLObj));  
+ok.
+
+
+---------------------------------------------
+succeeded: 3
+failed   : 0

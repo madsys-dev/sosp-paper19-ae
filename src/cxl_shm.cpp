@@ -19,6 +19,10 @@ uint32_t cxl_shm::get_thread_id()
     return thread_id;
 }
 
+uint64_t cxl_shm::get_tls_offset() {
+    return tls_offset;
+};
+
 cxl_shm::cxl_shm(uint64_t _size, int _shm_id)
 {
     size = _size;
@@ -50,13 +54,28 @@ void cxl_shm::thread_init()
     
     // find the index of thread local state
     uint64_t offset = THREAD_LOCAL_VEC_START - sizeof(cxl_thread_local_state_t);
-    cxl_thread_local_state_t* tls;
+    cxl_thread_local_state_t* tls= nullptr;;
     do {
+        //std::cout << "thread_init start  loop : " << std::endl;
         offset += sizeof(cxl_thread_local_state_t);
         tls_no_use = 0;
+        //std::cout << "in loop: " <<  "offset " << offset << "sstart:" << start << std::endl;
         tls = (cxl_thread_local_state_t*)get_data_at_addr(start, offset);
+        // Check if tls is a valid pointer
+        if (tls == nullptr) {
+            std::cerr << "Error: could not allocate thread local state" << std::endl;
+            return;
+        }
+        if (offset >= size) {
+            std::cerr << "Error: TLS offset out of range" << std::endl;
+            // Handle the error appropriately
+            return;
+        }
+        //std::cout << "thread_init end loop offset: " << offset << ", tls_no_use: " << tls_no_use << " ,tls: " << tls << " , tls->packed_machine_process_id: " << tls->packed_machine_process_id << " ,tls_id: " << tls_id << std::endl;
     } while (!tls->packed_machine_process_id.compare_exchange_weak(tls_no_use, tls_id));
+    // std::cout << "thread_init end loop offset: " << offset << ", tls_no_use: " << tls_no_use << " ,tls: " << tls << " , tls->packed_machine_process_id: " << tls->packed_machine_process_id << " ,tls_id: " << tls_id << std::endl;
     
+
     this->tls_offset = offset;
     this->thread_id = (offset - THREAD_LOCAL_VEC_START) / sizeof(cxl_thread_local_state_t) + 1;
     tls->pages[0] = {0, 0, 16};
@@ -81,6 +100,15 @@ CXLRef cxl_shm::cxl_malloc(uint64_t data_size, uint32_t embedded_ref_cnt)
     return cxl_ref_alloc(tbr, data_size + sizeof(CXLObj), embedded_ref_cnt);
 }
 
+CXLRef cxl_shm::cxl_malloc_wrc(uint64_t data_size, uint32_t embedded_ref_cnt)
+{
+    POTENTIAL_FAULT
+    RootRef* tbr = thread_base_ref_alloc();
+    //std::cout << "cxl_malloc_wrc: , tbr.get_tbr()->pptr:" << tbr->pptr << std::endl;
+    POTENTIAL_FAULT
+    return cxl_ref_alloc_wrc(tbr, data_size + sizeof(CXLObj), embedded_ref_cnt);
+}
+
 CXLRef cxl_shm::get_ref(uint64_t offset)
 {
     RootRef* tbr = thread_base_ref_alloc();
@@ -93,6 +121,7 @@ void cxl_shm::link_block_to_tbr(cxl_block* b, RootRef* tbr)
 {
     POTENTIAL_FAULT
     tbr->pptr = get_offset_for_data(start, (void*) b);
+    // std::cout << "link_block_to_tbr: , r1.get_tbr()->pptr:" << tbr->pptr << std::endl;
     POTENTIAL_FAULT
     tbr->ref_cnt += 1;
     POTENTIAL_FAULT
@@ -120,6 +149,32 @@ CXLObj* cxl_shm::block_to_cxlobj(cxl_block* b, cxl_page_t* page, uint64_t embedd
     return cxl_obj;
 }
 
+CXLObj* cxl_shm::block_to_cxlobj_wrc(cxl_block* b, cxl_page_t* page, uint64_t embedded_ref_cnt)
+{
+    // cxl_page_t* page = cxl_ptr_page((void*)b);
+    POTENTIAL_FAULT
+    page->used ++;
+    POTENTIAL_FAULT
+    page->free = b->next;
+    POTENTIAL_FAULT
+    CXLObj* cxl_obj = (CXLObj*) b;
+    POTENTIAL_FAULT
+    uint64_t info = pack_ref_info(thread_id, 1, *era(thread_id, thread_id));
+    POTENTIAL_FAULT
+    *era(thread_id, thread_id) += 1;
+    POTENTIAL_FAULT
+    cxl_obj->ref_info = info;
+    POTENTIAL_FAULT
+    cxl_obj->embedded_ref_cnt = embedded_ref_cnt;
+    POTENTIAL_FAULT
+    //cxl_obj->writer_count = (uint64_t)0;
+    POTENTIAL_FAULT
+    //cxl_obj->reader_count = (uint64_t)0;
+    POTENTIAL_FAULT
+    return cxl_obj;
+}
+
+
 RootRef* cxl_shm::block_to_tbr(cxl_block* b, cxl_page_t* page)
 {
     POTENTIAL_FAULT
@@ -137,6 +192,7 @@ RootRef* cxl_shm::block_to_tbr(cxl_block* b, cxl_page_t* page)
     POTENTIAL_FAULT
     return tbr;
 }
+
 
 cxl_message_queue_t* cxl_shm::block_to_msg_queue(cxl_block* b, uint16_t sender_id, uint16_t receiver_id)
 {
@@ -161,15 +217,19 @@ void cxl_shm::link_reference(uint64_t& _ref, uint64_t _refed)
     cxl_thread_local_state_t* tls = (cxl_thread_local_state_t*) get_data_at_addr(start, tls_offset);
     POTENTIAL_FAULT
     CXLObj* refed = (CXLObj*) get_data_at_addr(start, _refed);
+    refed->str_content = "test";
     POTENTIAL_FAULT
     uint64_t ref_info;
     uint64_t new_ref_info;
     uint16_t ref_info_cnt;
+    std::string str_content;
     do {
         POTENTIAL_FAULT
         ref_info = refed->ref_info;
         POTENTIAL_FAULT
         ref_info_cnt = get_ref_cnt_from_info(ref_info);
+
+        str_content = refed->str_content;
         POTENTIAL_FAULT
         uint32_t saw_cid = get_lcid_from_info(ref_info);
         POTENTIAL_FAULT
@@ -197,7 +257,11 @@ void cxl_shm::link_reference(uint64_t& _ref, uint64_t _refed)
         FLUSH(redo);
     } while(!refed->ref_info.compare_exchange_weak(ref_info, new_ref_info));
 
+    //refed->str_content = str_content;
+    //refed->str_content = str_content;    //放到上面更合适，和modCnt放在一起
     POTENTIAL_FAULT
+    // std::cout<<"link_reference  _refed: " << _refed << std::endl;
+    // std::cout<<"link_reference  _ref: " << _ref << std::endl;
     _ref = _refed;
     POTENTIAL_FAULT
 
@@ -304,12 +368,18 @@ cxl_page_queue_t* cxl_thread_local_state_s::cxl_page_queue(bool special, uint64_
     {
         if(size == 16)
         {
-            return &pages[0];
+            auto result = &pages[0];
+            //std::cout << "   0cxl_page_queue size: "  << size <<" ,final size: " << ((size-1)>>4)+2 << " , result: "<<  result << std::endl;
+            return result;
         }
         else if(size == sizeof(cxl_message_queue_t))
         {
-            return &pages[1];
+            auto result = &pages[1];
+            //std::cout << "    1cxl_page_queue size: "  << size <<" ,final size: " << ((size-1)>>4)+2 << " , result: "<<  result << std::endl;
+            return result;
         }
     }
-    return &pages[((size-1)>>4)+2];
+    auto result = &pages[((size-1)>>4)+2];
+    //std::cout << "   2cxl_page_queue size: "  << size <<" ,final size: " << ((size-1)>>4)+2 << " , result: "<<  result << std::endl;
+    return result;
 }
